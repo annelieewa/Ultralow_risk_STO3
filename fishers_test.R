@@ -143,6 +143,6 @@ table_pvals <- matrix(unlist(list_pvals), ncol = 3, byrow=TRUE)
 rownames(table_pvals) <- names(list_pvals)
 colnames(table_pvals) <- c("UL_vs_ERp", "UL_vs_LumA", "UL_vs_LumB")
 
-# write.table(table_mosaic, "Data/table_mosaic.txt", row.names = FALSE)
-# write.table(table_pvals, "Data/table_fishers_test.txt", row.names = TRUE)
+# write.table(table_mosaic, "table_mosaic.txt", row.names = FALSE)
+# write.table(table_pvals, "table_fishers_test.txt", row.names = TRUE)
 
