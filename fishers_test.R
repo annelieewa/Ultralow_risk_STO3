@@ -9,10 +9,10 @@ library(dplyr)
 #### Load data ----
 
 # Load data file containing: annot1, ord_dat1, ord_pat1
-load("Data/20170404patient_array.RData")
+load("20170404patient_array.RData")
 
 # Load gene module scores
-load("Data/Genefu_modulescores.RData")
+load("Genefu_modulescores.RData")
 
 # Select only clinical patient data that is needed
 ord_pat2 <- dplyr::select(ord_pat1, AgendiaRUNN, MammaPrint_Result, PAM50, ERstatus, PRstatus, HER2status, Ki67status, size20, grade)
