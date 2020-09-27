@@ -1,6 +1,6 @@
 ##### Project: Ultralow risk STO3 ######################################
 # mosaic_plot.R
-# Functions for Mosaic plots
+# Functions for mosaic plots
 # Author: Annelie Johansson & Nancy Yu & Adina Iftimi
 # Modified last: January 2020 by Annelie Johansson
 #########################################################################
