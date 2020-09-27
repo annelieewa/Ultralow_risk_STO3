@@ -22,7 +22,7 @@ diff_genes <- read.table("topgenes_seed97_793significant.txt", sep='\t', header=
 hallmarks <- gmtToG("Data/h.all.v6.2.symbols.gmt.txt") 
 
 # Read in GO BP gene groups to be used
-load("Data/GO_use.RData") # loads c5names_use and c5probes_use
+load("GO_use.RData") # loads c5names_use and c5probes_use
 
 nrow(diff_genes) # 793
 length(unique(diff_genes$ProbeID)) # 793
@@ -498,7 +498,7 @@ t
 # 29               PANCREAS_BETA_CELLS    0
 
 
-### Save
+# Save table
 
 diff_genes$Ultralow_expression <- ifelse(diff_genes$tstat < 0, "Down-regulated", "Up-regulated")
 
@@ -519,8 +519,7 @@ diff_genes_for_paper$Group[which(is.na(diff_genes_for_paper$Group))] <- ""
 # New colnames
 colnames(diff_genes_for_paper) <- c("ProbeID", "Gene",  "t-statistics", "Ultralow_expression", "p-value", "FDR", "Sensitivity", "Group")
 
-# write.table(diff_genes, "eTable2_full.txt", sep="\t", row.names=F, quote=F)
-# write.table(diff_genes_for_paper, "eTable2_for_paper.txt", sep="\t", row.names=F, quote=F)
+# write.table(diff_genes_for_paper, "eTable2_for_paper.txt", sep = "\t", row.names = F, quote = F)
 
 
 
