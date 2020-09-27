@@ -14,7 +14,7 @@ options(stringsAsFactors = FALSE)
 #### Load and prepare data ----
 
 # Load data file containing: annot1, ord_dat1, ord_pat1
-load("Data/20170404patient_array.RData")
+load("20170404patient_array.RData")
 
 dim(ord_pat1) # 652 x 119
 allpat_info <- select(ord_pat1, AgendiaRUNN, ERstatus, MammaPrint_Result)
@@ -120,12 +120,11 @@ erdat_eoc$GeneName <- annot_use$GeneName
 erdat_eoc$ProbeID <- annot_use$ProbeID
 
 # Find top genes, cutoff 0.001 FDR
-erdat_eoc_topDE <- topDE(erdat_eoc, co=0.001)
+erdat_eoc_topDE <- topDE(erdat_eoc, co = 0.001)
 
 # Using threshold of FDR < 0.001 results in n=793 significant probes (in n=706 genes)
 nrow(erdat_eoc_topDE) # 793
 length(unique(erdat_eoc_topDE$ProbeID)) # 793 probes
 length(unique(erdat_eoc_topDE$GeneName)) # 706 genes
 
-# write.table(erdat_eoc, file="allgenes_seed97_793significant.txt", sep="\t", quote=F, row.names=FALSE)
-# write.table(erdat_eoc_topDE, file="topgenes_seed97_793significant.txt", sep="\t", quote=F, row.names=FALSE)
+# write.table(erdat_eoc_topDE, file = "topgenes_seed97_793significant.txt", sep="\t", quote = F, row.names = FALSE)
