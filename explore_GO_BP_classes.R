@@ -43,8 +43,6 @@ c5names <- sapply(c5.proc, function(x) { x$src })
 c5probes <- sapply(c5.proc, function(x) { x$probes })
 length(c5names) # 4436 gene sets
 
-save(c5names, c5probes, file="C5_GO_BP_data_v6.2.RData")
-
 # Fill up these:
 GO_use <- c()
 GO_use_save <- c()
@@ -789,7 +787,7 @@ identical(hnames, c5names_use) # TRUE
 
 length(GO_use_save) # 76
 
-# save(c5names_use, c5probes_use, file="Data/GO_use.RData")
+# save(c5names_use, c5probes_use, file="GO_use.RData")
 
 
 
