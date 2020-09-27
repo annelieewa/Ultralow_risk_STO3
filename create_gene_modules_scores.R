@@ -14,7 +14,7 @@ options(stringsAsFactors = FALSE)
 load("20170404patient_array.RData")
 
 # Load all_modules: a list of 24 gene modules with the probe IDs, Entrez IDs, and coefficients
-load("Data/all_modules.RData")
+load("all_modules.RData")
 
 #### Add Entrez ID:s to annot1 using R package biomaRt ----
 # we need one column with "EntrezGene.ID" to calculate gene signature scores
@@ -145,9 +145,5 @@ dim(tertiles_bin) # 652 x 24
 dim(tertiles_all) # 652 x 24
 dim(genefu_scores) # 652 x 24
 
-head(tertiles_bin)
-head(tertiles_all)
-head(genefu_scores)
-
-# save(genefu_scores, tertiles_all, tertiles_bin, file="Data/Genefu_modulescores.RData")
+# save(genefu_scores, tertiles_all, tertiles_bin, file = "Genefu_modulescores.RData")
 
