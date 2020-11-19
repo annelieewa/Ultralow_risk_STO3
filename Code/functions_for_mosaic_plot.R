@@ -80,11 +80,11 @@ create_gg_mosaic <- function(char, t){
   
   t_temp_dn <- data.frame(type_n, characteristic_n)
   
-  t_temp_dn$type_n <- factor(t_temp_dn$type_n, levels = c("ERp", "UL", "LumA", "LumB"))
-  levels(t_temp_dn$type_n) <- c("ER positive", "Ultra Low", "Luminal A", "Luminal B")
+  t_temp_dn$type_n <- factor(t_temp_dn$type_n, levels = c("UL", "ERp", "LumA", "LumB"))
+  levels(t_temp_dn$type_n) <- c("Ultralow", "ER positive", "Luminal A", "Luminal B")
   
   # Create figure - add stripes for significant p-values
-  if(pvals[1] < 0.05) { stripes_ERp <- get_stripes(0, 0.468)
+  if(pvals[1] < 0.05) { stripes_ERp <- get_stripes(0.116, 0.584)
   }else{ stripes_ERp <- list(X = 0, Xend = 0, Y = 0, Yend = 0) }
   if(pvals[2] < 0.05) { stripes_LumA <- get_stripes(0.593, 0.858)
   }else{ stripes_LumA <- list(X = 0, Xend = 0, Y = 0, Yend = 0) }
@@ -96,6 +96,7 @@ create_gg_mosaic <- function(char, t){
     scale_y_continuous(breaks = c(0,1), labels = c("0%","100%")) +
     theme_light() +
     theme(axis.title.x = element_blank(), axis.text.x = element_blank()) +
+    guides(fill = guide_legend(reverse=TRUE)) +
     ylab("") +
     annotate("segment", x=stripes_ERp$X, xend = stripes_ERp$Xend, y = stripes_ERp$Y, yend = stripes_ERp$Yend, col = "grey", alpha = 1) +
     annotate("segment", x=stripes_LumA$X, xend = stripes_LumA$Xend, y = stripes_LumA$Y, yend = stripes_LumA$Yend, col = "grey", alpha = 1) +
