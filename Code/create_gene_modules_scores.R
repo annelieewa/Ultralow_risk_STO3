@@ -1,20 +1,23 @@
-##### Project: Ultralow risk STO3 ###############################################
-# create_gene_modules_scores.R
+#################################################################################
+# Manuscript: Clinical and Molecular Characteristics of ER-Positive Ultralow Risk
+#            Breast Cancer Tumors Identified by the 70-Gene Signature
 # Author: Annelie Johansson & Nancy Yu -- modified code from Nick Tobin
 # Modified last: January 2020 by Annelie Johansson
 #################################################################################
+
+setwd("/Volumes/Annelie Encrypted/Projects/Ultralow_risk_genes/Analysis/")
 
 library("biomaRt")
 library("genefu")
 options(stringsAsFactors = FALSE)
 
 #### Load data -----
-
-# Load data file containing: annot1, ord_dat1, ord_pat1
-load("20170404patient_array.RData")
+load("input/20170404patient_array.RData")
+microarray <- ord_dat1
+annotation <- annot1
 
 # Load all_modules: a list of 24 gene modules with the probe IDs, Entrez IDs, and coefficients
-load("all_modules.RData")
+load("input/all_modules.RData")
 
 #### Add Entrez ID:s to annot1 using R package biomaRt ----
 # we need one column with "EntrezGene.ID" to calculate gene signature scores
@@ -33,10 +36,10 @@ nrow(hg19_entrez_NAs_removed) # 64061
 # Obtain newer Entrez IDs from Ensembl.
 # Not all microarray probes have annotated Entrez IDs.
 # Some IDs might be outdated.
-annot1$EntrezGene.ID <- hg19_entrez_NAs_removed[match(annot1$GeneName, hg19_entrez_NAs_removed$hgnc_symbol), ]$entrezgene
+annotation$EntrezGene.ID <- hg19_entrez_NAs_removed[match(annotation$GeneName, hg19_entrez_NAs_removed$hgnc_symbol), ]$entrezgene
 # Some Refseq IDs in annot1 are obsolete
-length(which(is.na(annot1$EntrezGene.ID))) # 4504 - i.e. 14%
-length(which(!is.na(annot1$EntrezGene.ID))) # 27642
+length(which(is.na(annotation$EntrezGene.ID))) # 4504 - i.e. 14%
+length(which(!is.na(annotation$EntrezGene.ID))) # 27642
 
 #### Calculate gene modules scores using genefu ----
 # https://www.bioconductor.org/packages/release/bioc/html/genefu.html
@@ -65,9 +68,9 @@ tertiles_to_integer = function (dfOb){
 }
 
 ## Initialize genefu_scores data frame and calculate 
-genefu_scores <- data.frame(matrix(NA, nrow = ncol(ord_dat1), ncol = 24), row.names = colnames(ord_dat1))
+genefu_scores <- data.frame(matrix(NA, nrow = ncol(microarray), ncol = 24), row.names = colnames(microarray))
 for(i in 1:24) {
-  genefu_scores[i] <- mod_score2(eSet = ord_dat1, annotation = annot1, moduleOb = all_modules[[i]])
+  genefu_scores[i] <- mod_score2(eSet = microarray, annotation = annotation, moduleOb = all_modules[[i]])
 }
 
 ## Number of Entrez IDs within each gene module gene list that Genefu recognizes
@@ -107,7 +110,7 @@ summary(module_variance)
 # Categorizes the three tertiles to two groups – the worst vs the other two
 # (which depends upon if high or low score is associated with bad or poor prognosis) 
 
-tertiles_all <- data.frame(matrix(NA, nrow =  nrow(genefu_scores), ncol =  ncol(genefu_scores)), row.names = colnames(ord_dat1))
+tertiles_all <- data.frame(matrix(NA, nrow =  nrow(genefu_scores), ncol =  ncol(genefu_scores)), row.names = colnames(microarray))
 
 # Loop this function over each column  
 for (i in 1: ncol(genefu_scores)){  
@@ -129,9 +132,9 @@ colnames(tertiles_all)
 
 # Gene modules were high scores are associated with poor prognosis (= Highest tertile is worst)
 High_genes <- c("AKT_MTOR", "AURKA", "BETAC", "CIN70", "E2F3", "ERBB2", "GENE70", "GGI", "IGF1", "IMMUNE1",
-                "MAPK", "MYC", "PLAU", "PTEN", "RAS", "SRC", "STROMA1", "STROMA2")
+                "IMMUNE2", "MAPK", "MYC", "PLAU", "PTEN", "RAS", "SRC", "STROMA1", "STROMA2")
 # Gene modules were low scores are associated with poor prognosis (= Lowest tertile is worst)
-Low_genes <- c("CASP3", "ESR1", "IMMUNE2", "PIK3CA", "STAT1", "VEGF")
+Low_genes <- c("CASP3", "ESR1", "PIK3CA", "STAT1", "VEGF")
 
 # Convert tertiles to binary number (worst tertile vs. the other 2 combined)
 tertiles_hi <- tertiles_all[, High_genes]
@@ -141,9 +144,20 @@ tertiles_low_bin <- apply(tertiles_low, 2, function(x) { ifelse(x == 0, 1, 2) })
 tertiles_bin <- cbind(tertiles_hi_bin, tertiles_low_bin)
 tertiles_bin <- tertiles_bin[,order(colnames(tertiles_bin))]
 
-dim(tertiles_bin) # 652 x 24
-dim(tertiles_all) # 652 x 24
 dim(genefu_scores) # 652 x 24
+dim(tertiles_all) # 652 x 24
+dim(tertiles_bin) # 652 x 24
 
-# save(genefu_scores, tertiles_all, tertiles_bin, file = "Genefu_modulescores.RData")
+head(genefu_scores)
+head(tertiles_all)
+head(tertiles_bin) 
 
+## tertiles_bin is the data we are using in for downstream analysis
+## remove gene modules not analysed
+# PLAU = same as STROMA2
+# STAT1 = same as IMMUNE2
+# not including: CIN70, GENE70, GGI
+gene_modules <- tertiles_bin[, -which(colnames(tertiles_bin) %in% c("PLAU", "STAT1", "CIN70",
+                                                                    "GENE70", "GGI"))]
+
+save(gene_modules, file = "output/gene_modules.RData")
