@@ -63,7 +63,7 @@ Output: stable4_hallmarks_GO.txt</br>
 
 <b>FIGURES CODE</b>
 
-barplot_heatmap.R</br>
+barplot_ultralow.R</br>
 Bar plot of gene-modules, Figure 2.</br>
 Input: stable3.txt</br>
 Output: Figure2.pdf </br>
