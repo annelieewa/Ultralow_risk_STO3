@@ -1,8 +1,11 @@
-##### Project: Ultralow risk STO3 ###############################################
-# explore_GO_BP_classes.R
+###################################################################################
+# Manuscript: Clinical and Molecular Characteristics of ER-Positive Ultralow Risk
+#            Breast Cancer Tumors Identified by the 70-Gene Signature
 # Author: Annelie Johansson 
 # Modified last: January 2020 by Annelie Johansson
 #################################################################################
+
+setwd("/Volumes/Annelie Encrypted/Projects/Ultralow_risk_genes/Analysis/")
 
 #### In this script we try to find GO BP classes with similar functions as the Hallmarks ####
 library(sigPathway)
@@ -11,7 +14,7 @@ library(sigPathway)
 # http://software.broadinstitute.org/gsea/msigdb/index.jsp
 
 # Read in Hallmarks gene sets
-hallmarks <- gmtToG("Data/h.all.v6.2.symbols.gmt.txt") 
+hallmarks <- gmtToG("input/h.all.v6.2.symbols.gmt.txt") 
 hnames <- sapply(hallmarks, function(x) {x$src})
 hprobes <- sapply(hallmarks, function(x) {x$probes})
 length(hprobes) # 50
@@ -38,7 +41,7 @@ hnames <- hnames[order(hnames)]
 #### This script aims to explore/identify GO BP gene groups that correspons to the Hallmarks ####
 
 ## Read in GO biological process
-c5.proc <- gmtToG("Data/c5.bp.v6.2.symbols.gmt.txt") 
+c5.proc <- gmtToG("input/c5.bp.v6.2.symbols.gmt.txt") 
 c5names <- sapply(c5.proc, function(x) { x$src })
 c5probes <- sapply(c5.proc, function(x) { x$probes })
 length(c5names) # 4436 gene sets
@@ -776,18 +779,15 @@ GO_use_save <- c(GO_use_save, GO_use)
 c5names_use <- c(c5names_use, "XENOBIOTIC_METABOLISM")
 c5probes_use <- c(c5probes_use, list(unlist(c5probes[which(c5names %in% GO_use)])) )
 
-
 # END #
 
 length(c5names_use) # 46
 length(c5probes_use) # 46
-
 # cbind(hnames, c5names_use)
 identical(hnames, c5names_use) # TRUE
-
 length(GO_use_save) # 76
 
-# save(c5names_use, c5probes_use, file="GO_use.RData")
+save(c5names_use, c5probes_use, file="output/GO_use.RData")
 
 
 

@@ -1,8 +1,11 @@
-##### Project: Ultralow risk STO3 ###############################################
-# OCplusDiffAnalysis_probes.R
+###################################################################################
+# Manuscript: Clinical and Molecular Characteristics of ER-Positive Ultralow Risk
+#            Breast Cancer Tumors Identified by the 70-Gene Signature
 # Author: Annelie Johansson & Nancy Yu
 # Modified last: January 2020 by Annelie Johansson
 ###################################################################################
+
+setwd("/Volumes/Annelie Encrypted/Projects/Ultralow_risk_genes/Analysis/")
 
 library(biomaRt)
 library(OCplus)
@@ -12,12 +15,14 @@ set.seed(97)
 options(stringsAsFactors = FALSE)
 
 #### Load and prepare data ----
+load("input/20170404patient_array.RData")
+patient_data <- select(ord_pat1, AgendiaRUNN, MammaPrint_Result, PAM50,
+                       ERstatus, PRstatus, Ki67status, HER2status, grade, size20)
+microarray <- ord_dat1
+annotation <- annot1
 
-# Load data file containing: annot1, ord_dat1, ord_pat1
-load("20170404patient_array.RData")
-
-dim(ord_pat1) # 652 x 119
-allpat_info <- select(ord_pat1, AgendiaRUNN, ERstatus, MammaPrint_Result)
+dim(patient_data) # 652 x 9
+allpat_info <- select(patient_data, AgendiaRUNN, ERstatus, MammaPrint_Result)
 
 # All patients classidies as ultralow risk are ER-positive
 all(allpat_info$ERstatus[which(allpat_info$MammaPrint_Result == "Ultra Low Risk")] == "Positive") # TRUE
@@ -38,10 +43,10 @@ erpat_use <- erpat[c(which(erpat$MammaPrint_Result == "Ultra Low Risk"), which(e
 all(erpat_use$MammaPrint_Result[1:98] == "Ultra Low Risk") # TRUE 
 
 # Match gene expression data with patient data
-dim(ord_dat1) # 32146 x 652
+dim(microarray) # 32146 x 652
 
-all(erpat_use$AgendiaRUNN %in% colnames(ord_dat1)) # TRUE
-erdat <- ord_dat1[, erpat_use$AgendiaRUNN]
+all(erpat_use$AgendiaRUNN %in% colnames(microarray)) # TRUE
+erdat <- microarray[, erpat_use$AgendiaRUNN]
 identical(colnames(erdat), as.character(erpat_use$AgendiaRUNN)) # TRUE
 dim(erdat) # 32146 x 538
 
@@ -77,24 +82,24 @@ nrow(erdat_complete) # 22394
 # 23180 - 22394 = 786 probes removed 
 
 # Match annotation data with gene expression data
-all(rownames(erdat_complete) %in% rownames(annot1)) # TRUE
-annot1_complete <- annot1[rownames(erdat_complete), ]
-nrow(annot1_complete) # 22394
+all(rownames(erdat_complete) %in% rownames(annotation)) # TRUE
+annot_complete <- annotation[rownames(erdat_complete), ]
+nrow(annot_complete) # 22394
 
 # Remove probes without gene names (from gene expression data + annotation data)
-probes_without_genes <- rownames(annot1_complete)[which(annot1_complete$GeneName == "")]
+probes_without_genes <- rownames(annot_complete)[which(annot_complete$GeneName == "")]
 length(probes_without_genes) # 1329
 erdat_genes <- erdat_complete[-which(rownames(erdat_complete) %in% probes_without_genes),]
-annot1_genes <- annot1_complete[-which(rownames(annot1_complete) %in% probes_without_genes),]
+annot_genes <- annot_complete[-which(rownames(annot_complete) %in% probes_without_genes),]
 nrow(erdat_genes) # 21065
-nrow(annot1_genes) # 21065
-identical(rownames(erdat_genes), rownames(annot1_genes)) # TRUE
+nrow(annot_genes) # 21065
+identical(rownames(erdat_genes), rownames(annot_genes)) # TRUE
 
-## Remove AG_xxxx probes from Agendia
-probes_AG <- rownames(annot1_genes)[grep("AG_", annot1_genes$ProbeID)]
+## Remove AG_xxxx probes
+probes_AG <- rownames(annot_genes)[grep("AG_", annot_genes$ProbeID)]
 length(probes_AG) # 762
 erdat_use <- erdat_genes[-which(rownames(erdat_genes) %in% probes_AG), ]
-annot_use <- annot1_genes[-which(rownames(annot1_genes) %in% probes_AG), ]
+annot_use <- annot_genes[-which(rownames(annot_genes) %in% probes_AG), ]
 nrow(erdat_use) # 20303
 nrow(annot_use) # 20303
 identical(rownames(erdat_use), rownames(annot_use)) # TRUE
@@ -120,11 +125,11 @@ erdat_eoc$GeneName <- annot_use$GeneName
 erdat_eoc$ProbeID <- annot_use$ProbeID
 
 # Find top genes, cutoff 0.001 FDR
-erdat_eoc_topDE <- topDE(erdat_eoc, co = 0.001)
+erdat_eoc_topDE <- topDE(erdat_eoc, co=0.001)
 
 # Using threshold of FDR < 0.001 results in n=793 significant probes (in n=706 genes)
 nrow(erdat_eoc_topDE) # 793
 length(unique(erdat_eoc_topDE$ProbeID)) # 793 probes
 length(unique(erdat_eoc_topDE$GeneName)) # 706 genes
 
-# write.table(erdat_eoc_topDE, file = "topgenes_seed97_793significant.txt", sep="\t", quote = F, row.names = FALSE)
+write.table(erdat_eoc_topDE, file="output/stable4.txt", sep="\t", quote=F, row.names=FALSE)

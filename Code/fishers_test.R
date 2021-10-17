@@ -1,40 +1,47 @@
-##### Project: Ultralow risk STO3 ###############################################
-# fishers_test.R
-# Author: Annelie Johansson & Adina Iftimi
-# Modified last: January 2020 by Annelie Johansson
-#################################################################################
+###################################################################################
+# Manuscript: Clinical and Molecular Characteristics of ER-Positive Ultralow Risk
+#            Breast Cancer Tumors Identified by the 70-Gene Signature
+# Author: Annelie Johansson / Adina Iftimi
+# Modified last: August 2021 by Annelie Johansson
+###################################################################################
+
+setwd("/Volumes/Annelie Encrypted/Projects/Ultralow_risk_genes/Analysis/")
 
 library(dplyr)
 
-#### Load data ----
+## Load data ----
+load("input/20170404patient_array.RData")
+patient_data <- select(ord_pat1, AgendiaRUNN, MammaPrint_Result, PAM50,
+                       ERstatus, PRstatus, Ki67status, HER2status, grade, size20)
+microarray <- ord_dat1
+annotation <- annot1
 
-# Load data file containing: annot1, ord_dat1, ord_pat1
-load("20170404patient_array.RData")
+## Load gene modules 
+load("output/gene_modules.RData")
 
-# Load gene module scores
-load("Genefu_modulescores.RData")
+# All patients classifies as ultralow risk are ER-positive
+all(patient_data$ERstatus[which(patient_data$MammaPrint_Result == "Ultra Low Risk")] == "Positive") # TRUE
 
-# Select only clinical patient data that is needed
-ord_pat2 <- dplyr::select(ord_pat1, AgendiaRUNN, MammaPrint_Result, PAM50, ERstatus, PRstatus, HER2status, Ki67status, size20, grade)
-dim(ord_pat2) # 652 x 9
+## Select only ER-positive patients
+identical(colnames(microarray), patient_data$AgendiaRUNN) # TRUE
+patient_data <- subset(patient_data, ERstatus=="Positive")
+nrow(patient_data) # 538
+microarray <- microarray[,patient_data$AgendiaRUNN]
+identical(colnames(microarray), patient_data$AgendiaRUNN) # TRUE
 
-# Select only ER-positive patients
-ord_pat2 <- subset(ord_pat2, ERstatus=="Positive")
-nrow(ord_pat2) # 538
+## Reference group: Only Ultralow patients ####
+patient_data$UL <- patient_data$MammaPrint_Result == "Ultra Low Risk"
 
-## Reference group: Ultralow risk patients (UL)
-ord_pat2$UL <- ord_pat2$MammaPrint_Result == "Ultra Low Risk"
+## ER-positive group: ER-positive, not UL ####
+patient_data$ERpos <- (patient_data$MammaPrint_Result != "Ultra Low Risk")
 
-## ER-positive group: ER-positive, not UL 
-ord_pat2$ERpos <- (ord_pat2$MammaPrint_Result != "Ultra Low Risk")
+## Luminal A group: Luminal A, not UL ####
+patient_data$LumA <- (patient_data$PAM50 == "LumA" & patient_data$MammaPrint_Result != "Ultra Low Risk")
 
-## Luminal A group: Luminal A subtype, not UL
-ord_pat2$LumA <- (ord_pat2$PAM50 == "LumA" & ord_pat2$MammaPrint_Result != "Ultra Low Risk")
+## Luminal B group: Luminal B, not UL ####
+patient_data$LumB <- (patient_data$PAM50 == "LumB" & patient_data$MammaPrint_Result != "Ultra Low Risk")
 
-## Luminal B group: Luminal B subtype, not UL
-ord_pat2$LumB <- (ord_pat2$PAM50 == "LumB" & ord_pat2$MammaPrint_Result != "Ultra Low Risk")
-
-pat_use <- ord_pat2
+pat_use <- patient_data
 nrow(pat_use) # 538
 table(pat_use$UL, pat_use$ERpos)
 #           FALSE TRUE
@@ -49,67 +56,79 @@ table(pat_use$UL, pat_use$LumB)
 # FALSE   318  122
 # TRUE     98    0
 
-# Change some variables names and categories (order from best to worse prognosis-marker)
-pat_use$PR <- pat_use$PRstatus 
-pat_use$HER2 <- pat_use$HER2status 
-pat_use$Ki67 <- pat_use$Ki67status 
-pat_use$Size <- pat_use$size20 
-pat_use$Grade <- pat_use$grade 
+## Fix variables
+pat_use$size20 <- as.character(pat_use$size20)
+pat_use$size20[which(is.na(pat_use$size20))] <- "Unknown"
+pat_use$size20 <- factor(pat_use$size20, levels = c("0", "1", "Unknown"))
+table(pat_use$size20, useNA = "always")
+#   0       1 Unknown    <NA> 
+# 437      95       6       0 
 
-pat_use$PR <- factor(pat_use$PR, levels=c("Positive", "Negative"), labels=c("positive", "negative"))
-pat_use$HER2 <- factor(pat_use$HER2, levels=c("Negative", "Positive"), labels=c("negative", "positive"))
-pat_use$Ki67 <- factor(pat_use$Ki67, levels=c("Negative", "Positive"), labels=c("low", "high"))
-pat_use$Size <- factor(pat_use$Size, levels=c("0", "1"), labels=c("<=20 mm", ">20 mm"))
-pat_use$Grade <- factor(pat_use$Grade, levels=c("1", "2", "3"), labels=c("1", "2", "3"))
+pat_use$grade <- as.character(pat_use$grade)
+pat_use$grade[which(is.na(pat_use$grade))] <- "Unknown"
+pat_use$grade <- factor(pat_use$grade, levels = c("1", "2", "3", "Unknown"))
+table(pat_use$grade, useNA = "always")
+#    1       2       3 Unknown    <NA> 
+#  116     338      76       8       0 
 
-#### Add gene module scores ----
+pat_use$PRstatus <- factor(pat_use$PRstatus, levels = c("Positive", "Negative", "Unknown"))
+table(pat_use$PRstatus, useNA = "always")
+# Positive Negative  Unknown     <NA> 
+#    367      162        9        0 
 
-# Match with patients data
-tertiles_bin <- tertiles_bin[match(pat_use$AgendiaRUNN, rownames(tertiles_bin)),]
-identical(pat_use$AgendiaRUNN, rownames(tertiles_bin)) # TRUE
+pat_use$HER2status <- factor(pat_use$HER2status, levels = c("Negative", "Positive", "Unknown"))
+table(pat_use$HER2status, useNA = "always")
+# Negative Positive  Unknown     <NA> 
+#    513       24        1        0
 
-# Change names on categories
-tertiles_bin[which(tertiles_bin == "1")] <- "low"
-tertiles_bin[which(tertiles_bin == "2")] <- "high"
+pat_use$Ki67status <- factor(pat_use$Ki67status, levels = c("Negative", "Positive", "Unknown"))
+table(pat_use$Ki67status, useNA = "always")
+# Negative Positive  Unknown     <NA> 
+#     395      117       26        0 
 
-# Get correct variable names and categories (order from best to worse prognosis-marker)
-tertiles_bin <- as.data.frame(tertiles_bin)
-
-# Gene modules were low scores are associated with poor prognosis (= Lowest tertile is worst)
-Low_genes <- c("CASP3", "ESR1", "IMMUNE2", "PIK3CA", "STAT1", "VEGF")
-
-for(i in 1:ncol(tertiles_bin)){
-  if(colnames(tertiles_bin)[i] %in% Low_genes){
-    tertiles_bin[,i] <- factor(tertiles_bin[,i], levels = c("high", "low"))
-  }else{ tertiles_bin[,i] <- factor(tertiles_bin[,i], levels = c("low", "high")) }
-}
-
-
-# Add to pat_use
-tertiles_bin$AgendiaRUNN <- rownames(tertiles_bin)
-pat_use <- merge(pat_use, tertiles_bin, by = "AgendiaRUNN", all.x = TRUE)
-
-pat_use <- subset(pat_use, )
-variables <- c("PR", "HER2", "Ki67", "Size", "Grade", colnames(genefu_scores))
+pat_use$PAM50 <- factor(pat_use$PAM50, levels = c("LumA", "LumB", "Normal", "Her2", "Basal"))
+table(pat_use$PAM50, useNA = "always")
+# LumA   LumB Normal   Her2  Basal   <NA> 
+# 336    126     48     21      7      0 
 
 
-####  Create table for fisher's test and mosaic plot ----
-# We want to compare:
-#  - Ultralow patients (UL) vs ER-positive patients (not UL)
-#  - Ultralow patients vs Luminal A patients (ER-positive, not UL)
-#  - Ultralow patients vs Luminal B patients (ER-positive, not UL)
-table_mosaic <- NULL
+## Add gene modules
+
+# match with patients data
+gene_modules <- gene_modules[match(pat_use$AgendiaRUNN, rownames(gene_modules)),]
+identical(pat_use$AgendiaRUNN, rownames(gene_modules)) # TRUE
+gene_modules <- as.data.frame(gene_modules)
+
+# add to pat_use
+gene_modules$AgendiaRUNN <- rownames(gene_modules)
+pat_use <- merge(pat_use, gene_modules, by="AgendiaRUNN", all.x = TRUE)
+
+#### FISHERS TEST ####
+
+gene_modules_names <- colnames(gene_modules)[-20]
+variables <- c("size20", "grade", "PRstatus", "HER2status", "Ki67status", "PAM50",
+               gene_modules_names)
+
+# Compare UL - ERpos (not UL)
+# Compare UL - LumA (not UL)
+# Compare UL - LumB (not UL)
+
+table_fisher <- NULL
 
 for(v in 1:length(variables)){
   var_use <- variables[v]
   data <- pat_use
-  #Rvar <- data[, grep(var_use, colnames(data))]
-  var <- data[, which(colnames(data) == var_use)]
+  var <- data[, grep(var_use, colnames(data))]
   
-  if(any(is.na(var))){ data <- data[-which(is.na(var)), ] }
-  var <- data[, which(colnames(data) == var_use)]
+  if(var_use %in% gene_modules_names){
+    l1 <- length(which(var == 1))
+    l2 <- length(which(var == 2))
+    if(l1 > l2){
+      var <- factor(var, levels = c(1, 2), labels = c("Low", "High"))
+    }else{ var <- factor(var, levels = c(2, 1), labels = c("High", "Low")) }
+  }
   
-  #Rvar <- as.factor(data[, grep(var_use, colnames(data))])
+  # table with actual number 
   nr_table <- NULL
   for(i in 1:length(levels(var))){
     nr <- c(length(which(var == levels(var)[i] & data$UL == TRUE)),
@@ -118,31 +137,43 @@ for(v in 1:length(variables)){
             length(which(var == levels(var)[i] & data$LumB == TRUE)) )
     nr_table <- rbind(nr_table, nr)
   }
-  temp <- cbind.data.frame(cbind.data.frame(rep(var_use, length(levels(var))), levels(var)), nr_table)
-  colnames(temp) <- c("Characteristics", "level", "UL", "ERp", "LumA", "LumB")
-  table_mosaic <- rbind(table_mosaic, temp)
+  
+  if(any(levels(var) == "Unknown")){
+    temp <- nr_table[1:length(levels(var))-1,]
+  }else{ temp <- nr_table }
+  
+  # percentages
+  perc_table <- formatC(t(t(temp) / colSums(temp))*100, format = "f", digits = 1)
+  if("Unknown" %in% levels(var)){ perc_table <- rbind(perc_table, rep("-", 4)) } 
+  
+  # fisher's test
+  pvals <- c(fisher.test(temp[,c(1,2)], alternative = "two.sided")$p.value,
+             fisher.test(temp[,c(1,3)], alternative = "two.sided")$p.value,
+             fisher.test(temp[,c(1,4)], alternative = "two.sided")$p.value)
+    pvals <- formatC(pvals, format = "f", digits = 3)
+    pvals[which(pvals == "0.000")] <- "<0.001"
+  
+  # put together number + percentages + p-values
+  tab <- cbind(paste0(nr_table[,1], "_(", perc_table[,1], ")"),
+                paste0(nr_table[,2], "_(", perc_table[,2], ")"),
+                c(pvals[1], rep("", length(levels(var))-1)),
+                paste0(nr_table[,3], "_(", perc_table[,3], ")"),
+                c(pvals[2], rep("", length(levels(var))-1)),
+                paste0(nr_table[,4], "_(", perc_table[,4], ")"),
+                c(pvals[3], rep("", length(levels(var))-1)))
+  
+  colnames(tab) <- c("UL", "ERpos", "P1", "LumA", "P2", "LumB", "P3")
+  rownames(tab) <- levels(var)
+  table_fisher <- rbind(table_fisher, c(var_use, rep("", 6)), tab)
 }
 
-#### Create table with results from Fisher's test ----
+nrow(table_fisher) # 84
 
-list_pvals <- vector("list", length(variables))
+table1_save <- table_fisher[1: which(table_fisher[,1] == gene_modules_names[1])-1,]
+stable2_save <- table_fisher[which(table_fisher[,1] == gene_modules_names[1]):nrow(table_fisher),]
 
-set.seed(123)
-for(v in 1:length(variables)){
-  tempERp <- table_mosaic[which(table_mosaic$Characteristics == variables[v]), c("UL", "ERp")]
-  tempLumA <- table_mosaic[which(table_mosaic$Characteristics == variables[v]), c("UL", "LumA")]
-  tempLumB <- table_mosaic[which(table_mosaic$Characteristics == variables[v]), c("UL", "LumB")]
-  pvals <- c(fisher.test(tempERp, alternative = "two.sided")$p.value,
-             fisher.test(tempLumA, alternative = "two.sided")$p.value,
-             fisher.test(tempLumB, alternative = "two.sided")$p.value)
-  list_pvals[[v]] <- pvals
-  names(list_pvals)[v] <- variables[v]
-}
+# ## Save tables
+write.table(table1_save, "output/table1.txt", sep = "\t") #, row.names = FALSE)
+write.table(stable2_save, "output/stable3.txt", sep = "\t") #, row.names = TRUE)
 
-table_pvals <- matrix(unlist(list_pvals), ncol = 3, byrow=TRUE)
-rownames(table_pvals) <- names(list_pvals)
-colnames(table_pvals) <- c("UL_vs_ERp", "UL_vs_LumA", "UL_vs_LumB")
-
-# write.table(table_mosaic, "table_mosaic.txt", row.names = FALSE)
-# write.table(table_pvals, "table_fishers_test.txt", row.names = TRUE)
 
